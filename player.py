@@ -32,7 +32,7 @@ class VideoWindow(QMainWindow):
 
         videoWidget = QVideoWidget()
 
-        self.data = requests.get(f'https://www.reddit.com/r/{self.subreddit}/{self.sortby}.json?limit=1000', headers = {'User-agent': 'endless video bot uwu'}).json()
+        self.data = requests.get(f'https://www.reddit.com/r/{self.subreddit}/{self.sortby}.json?limit=100', headers = {'User-agent': 'endless video bot uwu'}).json()
 
         self.playButton = QPushButton()
         self.playButton.setEnabled(False)
@@ -150,7 +150,10 @@ class VideoWindow(QMainWindow):
         
     def selectNewVideo(self):
         if len(self.data['data']['children']) == 0:
-            self.data = requests.get(f'https://www.reddit.com/r/{self.subreddit}/{self.sortby}.json?limit=1000', headers = {'User-agent': 'endless video bot uwu'}).json()
+            if(self.data["data"]["after"]):
+                self.data = requests.get(f'https://www.reddit.com/r/{self.subreddit}/{self.sortby}.json?limit=100&after={self.data["data"]["after"]}', headers = {'User-agent': 'endless video bot uwu'}).json()
+            else:
+                self.data = requests.get(f'https://www.reddit.com/r/{self.subreddit}/{self.sortby}.json?limit=100', headers = {'User-agent': 'endless video bot uwu'}).json()
         number = random.randrange(len(self.data['data']['children']))
         if self.data['data']['children'][number]['data']['is_video']:
             self.url = self.data['data']['children'][number]['data']['media']['reddit_video']['fallback_url']
