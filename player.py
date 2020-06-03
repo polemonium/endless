@@ -23,6 +23,9 @@ class VideoWindow(QMainWindow):
 
     def __init__(self, parent=None):
         super(VideoWindow, self).__init__(parent)
+
+        self.readConfig()
+
         self.setWindowTitle("Endless Reddit Player") 
 
         self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
@@ -35,6 +38,11 @@ class VideoWindow(QMainWindow):
         self.playButton.setEnabled(False)
         self.playButton.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
         self.playButton.clicked.connect(self.play)
+
+        self.skipButton = QPushButton()
+        self.skipButton.setEnabled(True)
+        self.skipButton.setIcon(self.style().standardIcon(QStyle.SP_MediaSkipForward))
+        self.skipButton.clicked.connect(self.selectNewVideo)
 
         self.positionSlider = QSlider(Qt.Horizontal)
         self.positionSlider.setRange(0, 0)
@@ -71,6 +79,7 @@ class VideoWindow(QMainWindow):
         controlLayout = QHBoxLayout()
         controlLayout.setContentsMargins(0, 0, 0, 0)
         controlLayout.addWidget(self.playButton)
+        controlLayout.addWidget(self.skipButton)
         controlLayout.addWidget(self.positionSlider)
 
         layout = QVBoxLayout()
@@ -87,6 +96,12 @@ class VideoWindow(QMainWindow):
         self.mediaPlayer.positionChanged.connect(self.positionChanged)
         self.mediaPlayer.durationChanged.connect(self.durationChanged)
         self.mediaPlayer.error.connect(self.handleError)
+
+    def readConfig(self):
+        with open('config.json', 'r') as file:
+            config = json.load(file)
+            self.subreddit = config['subreddit']
+            self.offlineMode = config['offlineMode']
 
     def openFile(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Movie",
@@ -117,9 +132,8 @@ class VideoWindow(QMainWindow):
     def mediaStatusChanged(self, status):
         if self.mediaPlayer.mediaStatus() == QMediaPlayer.EndOfMedia:
             self.mediaPlayer.pause()
-            print("selected next")
             if len(self.data['data']['children']) == 0:
-                self.data = requests.get('https://www.reddit.com/r/2020policebrutality/.json?limit=1000', headers = {'User-agent': 'endless video bot uwu'}).json()
+                self.data = requests.get(f'https://www.reddit.com/r/{self.subreddit}/.json?limit=1000', headers = {'User-agent': 'endless video bot uwu'}).json()
             self.selectNewVideo()
 
     def positionChanged(self, position):
@@ -139,12 +153,13 @@ class VideoWindow(QMainWindow):
         number = random.randrange(len(self.data['data']['children']))
         if self.data['data']['children'][number]['data']['is_video']:
             self.url = self.data['data']['children'][number]['data']['media']['reddit_video']['fallback_url']
-            print(self.url)
+            print("selected next: " + self.url + ", " + str(len(self.data['data']['children'])) + " left before rescan.")
             self.mediaPlayer.setMedia(QMediaContent(QUrl(self.url)))
             self.playButton.setEnabled(True)
             self.mediaPlayer.play()
             del self.data['data']['children'][number]
         else: 
+            del self.data['data']['children'][number]
             self.selectNewVideo()
 
 
