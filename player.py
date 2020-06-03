@@ -32,7 +32,7 @@ class VideoWindow(QMainWindow):
 
         videoWidget = QVideoWidget()
 
-        self.data = requests.get('https://www.reddit.com/r/2020policebrutality/.json?limit=1000', headers = {'User-agent': 'endless video bot uwu'}).json()
+        self.data = requests.get(f'https://www.reddit.com/r/{self.subreddit}/{self.sortby}.json?limit=1000', headers = {'User-agent': 'endless video bot uwu'}).json()
 
         self.playButton = QPushButton()
         self.playButton.setEnabled(False)
@@ -101,6 +101,7 @@ class VideoWindow(QMainWindow):
         with open('config.json', 'r') as file:
             config = json.load(file)
             self.subreddit = config['subreddit']
+            self.sortby = config['sortby']
             self.offlineMode = config['offlineMode']
 
     def openFile(self):
@@ -132,8 +133,6 @@ class VideoWindow(QMainWindow):
     def mediaStatusChanged(self, status):
         if self.mediaPlayer.mediaStatus() == QMediaPlayer.EndOfMedia:
             self.mediaPlayer.pause()
-            if len(self.data['data']['children']) == 0:
-                self.data = requests.get(f'https://www.reddit.com/r/{self.subreddit}/.json?limit=1000', headers = {'User-agent': 'endless video bot uwu'}).json()
             self.selectNewVideo()
 
     def positionChanged(self, position):
@@ -150,6 +149,8 @@ class VideoWindow(QMainWindow):
         self.errorLabel.setText("Error: " + self.mediaPlayer.errorString())
         
     def selectNewVideo(self):
+        if len(self.data['data']['children']) == 0:
+            self.data = requests.get(f'https://www.reddit.com/r/{self.subreddit}/{self.sortby}.json?limit=1000', headers = {'User-agent': 'endless video bot uwu'}).json()
         number = random.randrange(len(self.data['data']['children']))
         if self.data['data']['children'][number]['data']['is_video']:
             self.url = self.data['data']['children'][number]['data']['media']['reddit_video']['fallback_url']
